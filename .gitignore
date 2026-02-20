@@ -1,0 +1,35 @@
+# Config with secrets
+config.json
+
+# Build
+gogents
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test / coverage
+coverage.out
+*.test
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cursor/*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+
+# Agent-generated (optional; remove if you want to track these)
+# AGENT_SUMMARY.txt
+# CAPABILITIES.txt
+# test-output.txt
+# proof.txt
