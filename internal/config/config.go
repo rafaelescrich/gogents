@@ -27,6 +27,14 @@ type Config struct {
 	EmbedAPIURL  string `json:"embed_api_url,omitempty"`
 	EmbedAPIKey  string `json:"embed_api_key,omitempty"`
 	EmbedModel   string `json:"embed_model,omitempty"`
+
+	// Server (OpenAI-compat API for Cursor / ngrok)
+	ServeAddr    string `json:"serve_addr,omitempty"`     // e.g. :8080
+	ServeAPIKey  string `json:"serve_api_key,omitempty"`  // optional; require Bearer token
+	ServeTLSCert string `json:"serve_tls_cert,omitempty"`
+	ServeTLSKey  string `json:"serve_tls_key,omitempty"`
+	ServeDomain  string `json:"serve_domain,omitempty"`  // e.g. gogents.yourdomain.com → automatic HTTPS (Let's Encrypt)
+	ServeACMEEmail string `json:"serve_acme_email,omitempty"` // for Let's Encrypt (default: admin@serve_domain)
 }
 
 // Load reads config from env and optional config file.
@@ -76,6 +84,24 @@ func Load() (*Config, error) {
 	if v := os.Getenv("EMBED_MODEL"); v != "" {
 		c.EmbedModel = v
 	}
+	if v := os.Getenv("GOGENTS_LISTEN"); v != "" {
+		c.ServeAddr = v
+	}
+	if v := os.Getenv("GOGENTS_SERVE_API_KEY"); v != "" {
+		c.ServeAPIKey = v
+	}
+	if v := os.Getenv("GOGENTS_TLS_CERT"); v != "" {
+		c.ServeTLSCert = v
+	}
+	if v := os.Getenv("GOGENTS_TLS_KEY"); v != "" {
+		c.ServeTLSKey = v
+	}
+	if v := os.Getenv("GOGENTS_SERVE_DOMAIN"); v != "" {
+		c.ServeDomain = v
+	}
+	if v := os.Getenv("GOGENTS_SERVE_ACME_EMAIL"); v != "" {
+		c.ServeACMEEmail = v
+	}
 
 	configPath := os.Getenv("GOGENTS_CONFIG")
 	if configPath == "" {
@@ -104,6 +130,12 @@ func Load() (*Config, error) {
 		EmbedAPIURL      string  `json:"embed_api_url,omitempty"`
 		EmbedAPIKey      string  `json:"embed_api_key,omitempty"`
 		EmbedModel       string  `json:"embed_model,omitempty"`
+		ServeAddr        string  `json:"serve_addr,omitempty"`
+		ServeAPIKey      string  `json:"serve_api_key,omitempty"`
+		ServeTLSCert     string  `json:"serve_tls_cert,omitempty"`
+		ServeTLSKey      string  `json:"serve_tls_key,omitempty"`
+		ServeDomain      string  `json:"serve_domain,omitempty"`
+		ServeACMEEmail   string  `json:"serve_acme_email,omitempty"`
 	}
 	if err := json.Unmarshal(data, &file); err != nil {
 		return nil, fmt.Errorf("parse config: %w", err)
@@ -150,6 +182,24 @@ func Load() (*Config, error) {
 	}
 	if file.EmbedModel != "" {
 		c.EmbedModel = file.EmbedModel
+	}
+	if file.ServeAddr != "" {
+		c.ServeAddr = file.ServeAddr
+	}
+	if file.ServeAPIKey != "" {
+		c.ServeAPIKey = file.ServeAPIKey
+	}
+	if file.ServeTLSCert != "" {
+		c.ServeTLSCert = file.ServeTLSCert
+	}
+	if file.ServeTLSKey != "" {
+		c.ServeTLSKey = file.ServeTLSKey
+	}
+	if file.ServeDomain != "" {
+		c.ServeDomain = file.ServeDomain
+	}
+	if file.ServeACMEEmail != "" {
+		c.ServeACMEEmail = file.ServeACMEEmail
 	}
 	return c, nil
 }

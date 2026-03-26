@@ -31,6 +31,9 @@ No API key. Use [Ollama](https://github.com/ollama/ollama) with a Snowflake Arct
 **Free OpenRouter (think + tasks) + Snowflake Arctic (RAG embeddings only):**  
 Use OpenRouter **free** models for the agent and **Arctic only for RAG embeddings** (e.g. Ollama with Arctic embed GGUF). See **[docs/FREE-OPENROUTER-ARCTIC-RAG.md](docs/FREE-OPENROUTER-ARCTIC-RAG.md)**.
 
+**Use gogents as a custom LLM in Cursor:**  
+Run gogents as an OpenAI-compatible HTTP API. **HTTPS** can be all in Go: set `GOGENTS_SERVE_DOMAIN=gogents.yourdomain.com` and gogents will get a free Let's Encrypt cert and serve on :443. Or use **ngrok** or a **reverse proxy**. See **[docs/CURSOR-AGENT.md](docs/CURSOR-AGENT.md)** and **[docs/HTTPS-REVERSE-PROXY.md](docs/HTTPS-REVERSE-PROXY.md)**.
+
 ## Configuration
 
 ### Environment variables
@@ -48,6 +51,12 @@ Use OpenRouter **free** models for the agent and **Arctic only for RAG embedding
 | `EMBED_API_URL` | Embeddings API base URL (e.g. OpenRouter or OpenAI) for RAG query embedding. |
 | `EMBED_API_KEY` | API key for embeddings. |
 | `EMBED_MODEL` | Embedding model (e.g. `openai/text-embedding-3-small`). |
+| `GOGENTS_SERVE` | Set to `1` to run HTTP server (OpenAI-compat) instead of CLI. |
+| `GOGENTS_LISTEN` | Server listen address (default `:8080`). |
+| `GOGENTS_SERVE_API_KEY` | Optional Bearer token for server; Cursor sends this as API key. |
+| `GOGENTS_TLS_CERT` / `GOGENTS_TLS_KEY` | Paths to TLS cert and key for HTTPS server. |
+| `GOGENTS_SERVE_DOMAIN` | Domain for automatic HTTPS (Let's Encrypt); e.g. `gogents.yourdomain.com`. Server listens on :443. |
+| `GOGENTS_SERVE_ACME_EMAIL` | Email for Let's Encrypt (default: `admin@` + serve_domain). |
 
 ### Config file
 
@@ -91,8 +100,11 @@ gogents/
 │   ├── config/           # Config load (env + JSON)
 │   ├── openrouter/       # OpenRouter API client (OpenAI-compat)
 │   ├── rag/              # RedVector REST client + optional embedder
+│   ├── server/           # OpenAI-compat HTTP API (for Cursor / ngrok)
 │   └── tools/            # read_file, write_file, list_dir, run_shell, web_fetch, rag_search
-├── docs/                 # LOCAL-STACK.md, FREE-OPENROUTER-ARCTIC-RAG.md
+├── docs/                 # LOCAL-STACK, FREE-OPENROUTER-ARCTIC-RAG, CURSOR-AGENT, HTTPS-REVERSE-PROXY
+├── Dockerfile            # Server image for docker-compose
+├── Caddyfile.example     # Reverse proxy (HTTPS) for gogents
 ├── config.example.json   # Example config (cloud)
 ├── config.example.free-arctic.json  # Example: free OpenRouter + Arctic RAG
 ├── go.mod

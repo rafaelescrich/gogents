@@ -1,0 +1,17 @@
+# Reverse proxy: HTTPS -> gogents (HTTP on :8080)
+# Rename to Caddyfile and set your domain. Caddy gets a free Let's Encrypt cert.
+#
+# With a domain (replace with yours):
+#   gogents.yourdomain.com {
+#       reverse_proxy localhost:8080
+#   }
+#
+# Local HTTPS only (self-signed):
+#   https://localhost:8443 {
+#       tls internal
+#       reverse_proxy localhost:8080
+#   }
+
+gogents.yourdomain.com {
+    reverse_proxy localhost:8080
+}

@@ -1,0 +1,5 @@
+# For use with docker-compose. Copy to Caddyfile.
+# Caddy replaces {$GOGENTS_DOMAIN} with env GOGENTS_DOMAIN (set in docker-compose).
+{$GOGENTS_DOMAIN} {
+    reverse_proxy gogents:8080
+}

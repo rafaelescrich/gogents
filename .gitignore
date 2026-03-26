@@ -1,8 +1,8 @@
 # Config with secrets
 config.json
 
-# Build
-gogents
+# Build (root binary only; do not ignore cmd/gogents/)
+/gogents
 *.exe
 *.exe~
 *.dll

@@ -1,0 +1,38 @@
+# Copy to docker-compose.yml and set env vars. Run: docker compose up -d
+# Requires: domain DNS pointing to this host (for Caddy Let's Encrypt).
+#
+# export GOGENTS_DOMAIN=gogents.yourdomain.com
+# export OPENROUTER_API_KEY=sk-or-...
+# docker compose up -d
+
+services:
+  gogents:
+    build: .
+    environment:
+      - GOGENTS_SERVE=1
+      - GOGENTS_LISTEN=:8080
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - GOGENTS_MODEL=${GOGENTS_MODEL:-stepfun/step-3.5-flash}
+      - GOGENTS_WORKSPACE=/workspace
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - gogents_workspace:/workspace
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    environment:
+      - GOGENTS_DOMAIN=${GOGENTS_DOMAIN:-gogents.yourdomain.com}
+    restart: unless-stopped
+    depends_on:
+      - gogents
+
+volumes:
+  caddy_data: {}
+  gogents_workspace: {}
