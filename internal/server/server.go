@@ -6,7 +6,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -80,13 +82,42 @@ func (s *Server) Run(ctx context.Context) error {
 		certmagic.DefaultACME.Agreed = true
 		certmagic.DefaultACME.Email = s.ACMEEmail
 		cfg := certmagic.NewDefault()
+
+		// HTTP-01 must be served on :80 during issuance and renewals (see CertMagic docs).
+		am, ok := cfg.Issuers[0].(*certmagic.ACMEIssuer)
+		if !ok {
+			return fmt.Errorf("certmagic: expected ACME issuer")
+		}
+		httpToHTTPS := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			u := "https://" + s.ServeDomain + r.URL.RequestURI()
+			http.Redirect(w, r, u, http.StatusMovedPermanently)
+		})
+		http80 := &http.Server{
+			Handler:           am.HTTPChallengeHandler(httpToHTTPS),
+			ReadHeaderTimeout: 15 * time.Second,
+			ReadTimeout:       30 * time.Second,
+		}
+		ln80, err := net.Listen("tcp", ":80")
+		if err != nil {
+			return fmt.Errorf("listen :80 (needed for Let's Encrypt HTTP-01): %w", err)
+		}
+		go func() {
+			if err := http80.Serve(ln80); err != nil && err != http.ErrServerClosed {
+				log.Printf("http :80: %v", err)
+			}
+		}()
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = http80.Shutdown(shutdownCtx)
+		}()
+
 		if err := cfg.ManageSync(ctx, []string{s.ServeDomain}); err != nil {
 			return err
 		}
 		tlsConfig := cfg.TLSConfig()
 		srv.Addr = ":443"
 		srv.TLSConfig = tlsConfig
-		go s.runHTTPRedirect(ctx)
 		go func() {
 			<-ctx.Done()
 			srv.Shutdown(context.Background())
@@ -111,21 +142,6 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	log.Printf("gogents server HTTP on %s (use ngrok or TLS for Cursor)", s.Listen)
 	return srv.ListenAndServe()
-}
-
-// runHTTPRedirect listens on :80 and redirects to HTTPS (when using ServeDomain).
-func (s *Server) runHTTPRedirect(ctx context.Context) {
-	redir := &http.Server{
-		Addr: ":80",
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			u := "https://" + s.ServeDomain + r.URL.RequestURI()
-			http.Redirect(w, r, u, http.StatusMovedPermanently)
-		}),
-		ReadHeaderTimeout: 10 * time.Second,
-	}
-	go redir.ListenAndServe()
-	<-ctx.Done()
-	redir.Shutdown(context.Background())
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
