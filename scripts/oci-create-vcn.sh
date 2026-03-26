@@ -7,6 +7,9 @@
 #   export OCI_CLI_REGION=us-ashburn-1   # optional if set in config
 #   ./scripts/oci-create-vcn.sh
 #
+# Existing VCN missing HTTP/HTTPS on the security list? Use:
+#   ./scripts/oci-open-web-ports.sh  (see that script for VCN_ID / NSG_ID)
+#
 # Optional:
 #   export VCN_CIDR=10.0.0.0/16
 #   export SUBNET_CIDR=10.0.0.0/24
