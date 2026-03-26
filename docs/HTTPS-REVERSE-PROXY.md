@@ -42,6 +42,30 @@ Then start: `./gogents --serve`
 
 First run will request a certificate from Let's Encrypt; certs are cached and renewed automatically.
 
+### Production: TLS + API key (not open to the world)
+
+Without an API key, anyone who can reach your host can call the chat API. For a public domain, **always** set a secret and use it as the Bearer token.
+
+1. **Generate a long random key** (example): `openssl rand -hex 32`
+2. **Export** (or put in `~/.gogents/config.json` as `serve_api_key`):
+
+   ```bash
+   export GOGENTS_SERVE=1
+   export GOGENTS_SERVE_DOMAIN=gogents.yourdomain.com
+   export GOGENTS_SERVE_API_KEY='paste-your-secret-here'
+   # optional but recommended for Let's Encrypt account:
+   export GOGENTS_SERVE_ACME_EMAIL=you@example.com
+   ./gogents --serve
+   ```
+
+3. **DNS**: an **A record** for `gogents.yourdomain.com` → your VM’s **public IP**.
+4. **Firewall / security list**: allow inbound **TCP 80** (ACME + redirect) and **TCP 443** (HTTPS). Nothing else needs to be public for gogents TLS mode.
+5. **Cursor** (custom model): **Base URL** `https://gogents.yourdomain.com`, **API key** = the same value as `GOGENTS_SERVE_API_KEY`. Requests must send `Authorization: Bearer <key>` (Cursor does this when you set the API key).
+
+`/v1/chat/completions` and `/health` both require the Bearer token when `GOGENTS_SERVE_API_KEY` is set.
+
+**Alternative:** If you already have a certificate (e.g. from your cloud provider), use `GOGENTS_TLS_CERT` and `GOGENTS_TLS_KEY` with `GOGENTS_LISTEN=:443` (see README) instead of `GOGENTS_SERVE_DOMAIN`.
+
 ---
 
 ## Option A–C: Reverse proxy (Caddy)

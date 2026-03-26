@@ -65,10 +65,7 @@ type chatResponse struct {
 func (s *Server) Run(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/chat/completions", s.auth(s.handleChatCompletions))
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
+	mux.HandleFunc("/health", s.auth(s.handleHealth))
 
 	srv := &http.Server{
 		Handler:           mux,
@@ -131,13 +128,23 @@ func (s *Server) runHTTPRedirect(ctx context.Context) {
 	redir.Shutdown(context.Background())
 }
 
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
+}
+
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if s.APIKey != "" {
 			auth := r.Header.Get("Authorization")
 			if !strings.HasPrefix(auth, "Bearer ") || strings.TrimPrefix(auth, "Bearer ") != s.APIKey {
-				http.Error(w, `{"error":{"message":"invalid or missing API key"}}`, http.StatusUnauthorized)
 				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(`{"error":{"message":"invalid or missing API key"}}`))
 				return
 			}
 		}
